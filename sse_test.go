@@ -196,7 +196,7 @@ func TestRenderSSE(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, w.Body.String(), "event:msg\ndata:hi! how are you?\n\n")
-	assert.Equal(t, w.Header().Get("Content-Type"), "text/event-stream")
+	assert.Equal(t, w.Header().Get("Content-Type"), "text/event-stream;charset=utf-8")
 	assert.Equal(t, w.Header().Get("Cache-Control"), "no-cache")
 }
 
