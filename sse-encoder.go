@@ -18,7 +18,7 @@ import (
 // W3C Working Draft 29 October 2009
 // http://www.w3.org/TR/2009/WD-eventsource-20091029/
 
-const ContentType = "text/event-stream"
+const ContentType = "text/event-stream;charset=utf-8"
 
 var contentType = []string{ContentType}
 var noCache = []string{"no-cache"}
