@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"strconv"
 )
 
 type decoder struct {
@@ -98,7 +99,11 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 			// If the field value consists of only characters in the range U+0030 DIGIT ZERO (0) to U+0039 DIGIT NINE (9),
 			// then interpret the field value as an integer in base ten, and set the event stream's reconnection time to that integer.
 			// Otherwise, ignore the field.
-			currentEvent.Id = string(value)
+			valueRetryint, ise := strconv.Atoi(string(value))
+			if ise == nil {
+				currentEvent.Retry = uint(valueRetryint)
+			}
+
 		case "data":
 			// Append the field value to the data buffer,
 			dataBuffer.Write(value)
