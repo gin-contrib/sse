@@ -5,6 +5,7 @@
 package sse
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 )
@@ -37,19 +38,16 @@ func (d *decoder) dispatchEvent(event Event, data string) {
 }
 
 func (d *decoder) decode(r io.Reader) ([]Event, error) {
-	buf, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-
 	var currentEvent Event
 	dataBuffer := new(bytes.Buffer)
 	// TODO (and unit tests)
 	// Lines must be separated by either a U+000D CARRIAGE RETURN U+000A LINE FEED (CRLF) character pair,
 	// a single U+000A LINE FEED (LF) character,
 	// or a single U+000D CARRIAGE RETURN (CR) character.
-	lines := bytes.Split(buf, []byte{'\n'})
-	for _, line := range lines {
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		line := s.Bytes()
+
 		if len(line) == 0 {
 			// If the line is empty (a blank line). Dispatch the event.
 			d.dispatchEvent(currentEvent, dataBuffer.String())
@@ -113,5 +111,5 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 	// Once the end of the file is reached, the user agent must dispatch the event one final time.
 	d.dispatchEvent(currentEvent, dataBuffer.String())
 
-	return d.events, nil
+	return d.events, s.Err()
 }
