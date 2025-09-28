@@ -20,10 +20,10 @@ func TestEncodeOnlyData(t *testing.T) {
 	err := Encode(w, event)
 	assert.NoError(t, err)
 	assert.Equal(t, w.String(),
-		`data:junk
-data:
-data:jk
-data:id:fake
+		`data: junk
+data: 
+data: jk
+data: id:fake
 
 `)
 
@@ -41,11 +41,11 @@ func TestEncodeWithEvent(t *testing.T) {
 	err := Encode(w, event)
 	assert.NoError(t, err)
 	assert.Equal(t, w.String(),
-		`event:t\n:<>\r	est
-data:junk
-data:
-data:jk
-data:id:fake
+		`event: t\n:<>\r	est
+data: junk
+data: 
+data: jk
+data: id:fake
 
 `)
 
@@ -62,11 +62,11 @@ func TestEncodeWithId(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, w.String(),
-		`id:t\n:<>\r	est
-data:junk
-data:
-data:jk
-data:id:fa\rke
+		`id: t\n:<>\r	est
+data: junk
+data: 
+data: jk
+data: id:fa\rke
 
 `)
 }
@@ -79,12 +79,12 @@ func TestEncodeWithRetry(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, w.String(),
-		`retry:11
-data:junk
-data:
-data:jk
-data:id:fake
-data:
+		`retry: 11
+data: junk
+data: 
+data: jk
+data: id:fake
+data: 
 
 `)
 }
@@ -98,7 +98,7 @@ func TestEncodeWithEverything(t *testing.T) {
 		Data:  "some data",
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "id:12345\nevent:abc\nretry:10\ndata:some data\n\n")
+	assert.Equal(t, w.String(), "id: 12345\nevent: abc\nretry: 10\ndata: some data\n\n")
 }
 
 func TestEncodeMap(t *testing.T) {
@@ -111,7 +111,7 @@ func TestEncodeMap(t *testing.T) {
 		},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a map\ndata:{\"bar\":\"id: 2\",\"foo\":\"b\\n\\rar\"}\n\n")
+	assert.Equal(t, w.String(), "event: a map\ndata: {\"bar\":\"id: 2\",\"foo\":\"b\\n\\rar\"}\n\n")
 }
 
 func TestEncodeSlice(t *testing.T) {
@@ -121,7 +121,7 @@ func TestEncodeSlice(t *testing.T) {
 		Data:  []interface{}{1, "text", map[string]interface{}{"foo": "bar"}},
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a slice\ndata:[1,\"text\",{\"foo\":\"bar\"}]\n\n")
+	assert.Equal(t, w.String(), "event: a slice\ndata: [1,\"text\",{\"foo\":\"bar\"}]\n\n")
 }
 
 func TestEncodeStruct(t *testing.T) {
@@ -136,7 +136,7 @@ func TestEncodeStruct(t *testing.T) {
 		Data:  myStruct,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a struct\ndata:{\"A\":1,\"value\":\"number\"}\n\n")
+	assert.Equal(t, w.String(), "event: a struct\ndata: {\"A\":1,\"value\":\"number\"}\n\n")
 
 	w.Reset()
 	err = Encode(w, Event{
@@ -144,7 +144,7 @@ func TestEncodeStruct(t *testing.T) {
 		Data:  &myStruct,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a struct\ndata:{\"A\":1,\"value\":\"number\"}\n\n")
+	assert.Equal(t, w.String(), "event: a struct\ndata: {\"A\":1,\"value\":\"number\"}\n\n")
 }
 
 func TestEncodeInteger(t *testing.T) {
@@ -154,7 +154,7 @@ func TestEncodeInteger(t *testing.T) {
 		Data:  1,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:an integer\ndata:1\n\n")
+	assert.Equal(t, w.String(), "event: an integer\ndata: 1\n\n")
 }
 
 func TestEncodeFloat(t *testing.T) {
@@ -164,7 +164,7 @@ func TestEncodeFloat(t *testing.T) {
 		Data:  1.5,
 	})
 	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:Float\ndata:1.5\n\n")
+	assert.Equal(t, w.String(), "event: Float\ndata: 1.5\n\n")
 }
 
 func TestEncodeStream(t *testing.T) {
@@ -186,9 +186,9 @@ func TestEncodeStream(t *testing.T) {
 		Data:  "hi! dude",
 	})
 	assert.Equal(t, w.String(),
-		"event:float\ndata:1.5\n\n"+
-			"id:123\ndata:{\"bar\":\"foo\",\"foo\":\"bar\"}\n\n"+
-			"id:124\nevent:chat\ndata:hi! dude\n\n")
+		"event: float\ndata: 1.5\n\n"+
+			"id: 123\ndata: {\"bar\":\"foo\",\"foo\":\"bar\"}\n\n"+
+			"id: 124\nevent: chat\ndata: hi! dude\n\n")
 }
 
 func TestRenderSSE(t *testing.T) {
@@ -200,7 +200,7 @@ func TestRenderSSE(t *testing.T) {
 	}).Render(w)
 
 	assert.NoError(t, err)
-	assert.Equal(t, w.Body.String(), "event:msg\ndata:hi! how are you?\n\n")
+	assert.Equal(t, w.Body.String(), "event: msg\ndata: hi! how are you?\n\n")
 	assert.Equal(t, w.Header().Get("Content-Type"), "text/event-stream;charset=utf-8")
 	assert.Equal(t, w.Header().Get("Cache-Control"), "no-cache")
 }
