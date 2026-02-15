@@ -30,11 +30,11 @@ var fieldReplacer = strings.NewReplacer(
 	"\r", "\\r")
 
 var dataReplacer = strings.NewReplacer(
-	"\n", "\ndata:",
+	"\n", "\ndata: ",
 	"\r", "\\r")
 
 type Event struct {
-	Event string
+	Event string `default:"message"`
 	Id    string
 	Retry uint
 	Data  interface{}
@@ -50,7 +50,7 @@ func Encode(writer io.Writer, event Event) error {
 
 func writeId(w stringWriter, id string) {
 	if len(id) > 0 {
-		_, _ = w.WriteString("id:")
+		_, _ = w.WriteString("id: ")
 		_, _ = fieldReplacer.WriteString(w, id)
 		_, _ = w.WriteString("\n")
 	}
@@ -58,7 +58,7 @@ func writeId(w stringWriter, id string) {
 
 func writeEvent(w stringWriter, event string) {
 	if len(event) > 0 {
-		_, _ = w.WriteString("event:")
+		_, _ = w.WriteString("event: ")
 		_, _ = fieldReplacer.WriteString(w, event)
 		_, _ = w.WriteString("\n")
 	}
@@ -66,14 +66,14 @@ func writeEvent(w stringWriter, event string) {
 
 func writeRetry(w stringWriter, retry uint) {
 	if retry > 0 {
-		_, _ = w.WriteString("retry:")
+		_, _ = w.WriteString("retry: ")
 		_, _ = w.WriteString(strconv.FormatUint(uint64(retry), 10))
 		_, _ = w.WriteString("\n")
 	}
 }
 
 func writeData(w stringWriter, data interface{}) error {
-	_, _ = w.WriteString("data:")
+	_, _ = w.WriteString("data: ")
 
 	bData, ok := data.([]byte)
 	if ok {
