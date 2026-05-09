@@ -13,10 +13,10 @@ import (
 )
 
 const (
-	testFooKey         = "foo"
-	testBarKey         = "bar"
-	testNewMessage     = "new_message"
-	testBenchmarkData  = "hi! how are you? I am fine. this is a long stupid message!!!"
+	testFooKey        = "foo"
+	testBarKey        = "bar"
+	testNewMessage    = "new_message"
+	testBenchmarkData = "hi! how are you? I am fine. this is a long stupid message!!!"
 )
 
 func TestEncodeOnlyData(t *testing.T) {
