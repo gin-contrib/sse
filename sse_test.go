@@ -12,6 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const (
+	testFooKey         = "foo"
+	testBarKey         = "bar"
+	testNewMessage     = "new_message"
+	testBenchmarkData  = "hi! how are you? I am fine. this is a long stupid message!!!"
+)
+
 func TestEncodeOnlyData(t *testing.T) {
 	w := new(bytes.Buffer)
 	event := Event{
@@ -106,8 +113,8 @@ func TestEncodeMap(t *testing.T) {
 	err := Encode(w, Event{
 		Event: "a map",
 		Data: map[string]interface{}{
-			"foo": "b\n\rar",
-			"bar": "id: 2",
+			testFooKey: "b\n\rar",
+			testBarKey: "id: 2",
 		},
 	})
 	assert.NoError(t, err)
@@ -118,7 +125,7 @@ func TestEncodeSlice(t *testing.T) {
 	w := new(bytes.Buffer)
 	err := Encode(w, Event{
 		Event: "a slice",
-		Data:  []interface{}{1, "text", map[string]interface{}{"foo": "bar"}},
+		Data:  []interface{}{1, "text", map[string]interface{}{testFooKey: testBarKey}},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, w.String(), "event:a slice\ndata:[1,\"text\",{\"foo\":\"bar\"}]\n\n")
@@ -177,7 +184,7 @@ func TestEncodeStream(t *testing.T) {
 
 	_ = Encode(w, Event{
 		Id:   "123",
-		Data: map[string]interface{}{"foo": "bar", "bar": "foo"},
+		Data: map[string]interface{}{testFooKey: testBarKey, testBarKey: testFooKey},
 	})
 
 	_ = Encode(w, Event{
@@ -211,8 +218,8 @@ func BenchmarkResponseWriter(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = (Event{
-			Event: "new_message",
-			Data:  "hi! how are you? I am fine. this is a long stupid message!!!",
+			Event: testNewMessage,
+			Data:  testBenchmarkData,
 		}).Render(w)
 	}
 }
@@ -223,10 +230,10 @@ func BenchmarkFullSSE(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = Encode(buf, Event{
-			Event: "new_message",
+			Event: testNewMessage,
 			Id:    "13435",
 			Retry: 10,
-			Data:  "hi! how are you? I am fine. this is a long stupid message!!!",
+			Data:  testBenchmarkData,
 		})
 		buf.Reset()
 	}
@@ -238,9 +245,9 @@ func BenchmarkNoRetrySSE(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = Encode(buf, Event{
-			Event: "new_message",
+			Event: testNewMessage,
 			Id:    "13435",
-			Data:  "hi! how are you? I am fine. this is a long stupid message!!!",
+			Data:  testBenchmarkData,
 		})
 		buf.Reset()
 	}
@@ -252,8 +259,8 @@ func BenchmarkSimpleSSE(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = Encode(buf, Event{
-			Event: "new_message",
-			Data:  "hi! how are you? I am fine. this is a long stupid message!!!",
+			Event: testNewMessage,
+			Data:  testBenchmarkData,
 		})
 		buf.Reset()
 	}
