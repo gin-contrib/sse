@@ -7,6 +7,7 @@ package sse
 import (
 	"bytes"
 	"io"
+	"strconv"
 )
 
 type decoder struct {
@@ -99,7 +100,10 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 			// then interpret the field value as an integer in base ten, and set the event stream's
 			// reconnection time to that integer.
 			// Otherwise, ignore the field.
-			currentEvent.Id = string(value)
+			if len(value) != 0 && '0' <= value[0] && value[0] <= '9' {
+				num, _ := strconv.ParseUint(string(value), 10, 0)
+				currentEvent.Retry = uint(num)
+			}
 		case "data":
 			// Append the field value to the data buffer,
 			dataBuffer.Write(value)

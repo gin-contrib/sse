@@ -66,6 +66,26 @@ data
 	assert.Equal(t, events[0].Id, "123456ABCabc789010")
 }
 
+func TestDecodeSingle4(t *testing.T) {
+	events, err := Decode(bytes.NewBufferString(
+		`
+id:123456ABCabc789010
+retry: 6
+event: message123
+: we can append data
+data:this is a text
+data: a very nice one
+data:
+data
+: ending with a comment`))
+
+	assert.NoError(t, err)
+	assert.Len(t, events, 1)
+	assert.Equal(t, events[0].Event, "message123")
+	assert.Equal(t, events[0].Id, "123456ABCabc789010")
+	assert.Equal(t, events[0].Retry, uint(6))
+}
+
 func TestDecodeMulti1(t *testing.T) {
 	events, err := Decode(bytes.NewBufferString(
 		`
