@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDecodeSingle1(t *testing.T) {
@@ -19,12 +20,13 @@ fake:
 id: 123456789010
 : we can append data
 : and multiple comments should not break it
-data: a very nice one`))
+data: a very nice one`,
+	))
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, events, 1)
-	assert.Equal(t, events[0].Event, "message")
-	assert.Equal(t, events[0].Id, "123456789010")
+	assert.Equal(t, "message", events[0].Event)
+	assert.Equal(t, "123456789010", events[0].Id)
 }
 
 func TestDecodeSingle2(t *testing.T) {
@@ -41,11 +43,12 @@ id:1234567890\n10
 data:a very nice one\n!
 
 
-`))
-	assert.NoError(t, err)
+`,
+	))
+	require.NoError(t, err)
 	assert.Len(t, events, 1)
-	assert.Equal(t, events[0].Event, "a message\\n\\n")
-	assert.Equal(t, events[0].Id, "1234567890\\n10")
+	assert.Equal(t, "a message\\n\\n", events[0].Event)
+	assert.Equal(t, "1234567890\\n10", events[0].Id)
 }
 
 func TestDecodeSingle3(t *testing.T) {
@@ -58,12 +61,13 @@ data:this is a text
 data: a very nice one
 data:
 data
-: ending with a comment`))
+: ending with a comment`,
+	))
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, events, 1)
-	assert.Equal(t, events[0].Event, "message123")
-	assert.Equal(t, events[0].Id, "123456ABCabc789010")
+	assert.Equal(t, "message123", events[0].Event)
+	assert.Equal(t, "123456ABCabc789010", events[0].Id)
 }
 
 func TestDecodeMulti1(t *testing.T) {
@@ -95,11 +99,12 @@ data
 
 event:
 
-id`))
-	assert.NoError(t, err)
+id`,
+	))
+	require.NoError(t, err)
 	assert.Len(t, events, 3)
-	assert.Equal(t, events[0].Event, "weird event")
-	assert.Equal(t, events[0].Id, "")
+	assert.Equal(t, "weird event", events[0].Event)
+	assert.Empty(t, events[0].Id)
 }
 
 func TestDecodeW3C(t *testing.T) {
@@ -110,7 +115,8 @@ data
 data
 
 data:
-`))
-	assert.NoError(t, err)
+`,
+	))
+	require.NoError(t, err)
 	assert.Len(t, events, 1)
 }

@@ -27,28 +27,30 @@ var (
 
 var fieldReplacer = strings.NewReplacer(
 	"\n", "\\n",
-	"\r", "\\r")
+	"\r", "\\r",
+)
 
 var dataReplacer = strings.NewReplacer(
 	"\n", "\ndata:",
-	"\r", "\\r")
+	"\r", "\\r",
+)
 
 type Event struct {
 	Event string
-	Id    string
+	Id    string //nolint:staticcheck // ST1003: public API field Id kept for backward compatibility
 	Retry uint
-	Data  interface{}
+	Data  any
 }
 
 func Encode(writer io.Writer, event Event) error {
 	w := checkWriter(writer)
-	writeId(w, event.Id)
+	writeID(w, event.Id)
 	writeEvent(w, event.Event)
 	writeRetry(w, event.Retry)
 	return writeData(w, event.Data)
 }
 
-func writeId(w stringWriter, id string) {
+func writeID(w stringWriter, id string) {
 	if len(id) > 0 {
 		_, _ = w.WriteString("id:")
 		_, _ = fieldReplacer.WriteString(w, id)
@@ -72,7 +74,7 @@ func writeRetry(w stringWriter, retry uint) {
 	}
 }
 
-func writeData(w stringWriter, data interface{}) error {
+func writeData(w stringWriter, data any) error {
 	_, _ = w.WriteString("data:")
 
 	bData, ok := data.([]byte)
@@ -82,7 +84,7 @@ func writeData(w stringWriter, data interface{}) error {
 		return nil
 	}
 
-	switch kindOfData(data) { //nolint:exhaustive
+	switch kindOfData(data) { //nolint:exhaustive // remaining kinds need no special encoding
 	case reflect.Struct, reflect.Slice, reflect.Map:
 		err := json.NewEncoder(w).Encode(data)
 		if err != nil {
@@ -110,7 +112,7 @@ func (r Event) WriteContentType(w http.ResponseWriter) {
 	}
 }
 
-func kindOfData(data interface{}) reflect.Kind {
+func kindOfData(data any) reflect.Kind {
 	value := reflect.ValueOf(data)
 	valueType := value.Kind()
 	if valueType == reflect.Pointer {
