@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -25,14 +26,13 @@ func TestEncodeOnlyData(t *testing.T) {
 		Data: "junk\n\njk\nid:fake",
 	}
 	err := Encode(w, event)
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(),
-		`data:junk
+	require.NoError(t, err)
+	assert.Equal(t, `data:junk
 data:
 data:jk
 data:id:fake
 
-`)
+`, w.String())
 
 	decoded, _ := Decode(w)
 	assert.Equal(t, "message", decoded[0].Event)
@@ -46,15 +46,14 @@ func TestEncodeWithEvent(t *testing.T) {
 		Data:  "junk\n\njk\nid:fake",
 	}
 	err := Encode(w, event)
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(),
-		`event:t\n:<>\r	est
+	require.NoError(t, err)
+	assert.Equal(t, `event:t\n:<>\r	est
 data:junk
 data:
 data:jk
 data:id:fake
 
-`)
+`, w.String())
 
 	decoded, _ := Decode(w)
 	assert.Equal(t, "t\\n:<>\\r\test", decoded[0].Event)
@@ -67,15 +66,14 @@ func TestEncodeWithId(t *testing.T) {
 		Id:   "t\n:<>\r\test",
 		Data: "junk\n\njk\nid:fa\rke",
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(),
-		`id:t\n:<>\r	est
+	require.NoError(t, err)
+	assert.Equal(t, `id:t\n:<>\r	est
 data:junk
 data:
 data:jk
 data:id:fa\rke
 
-`)
+`, w.String())
 }
 
 func TestEncodeWithRetry(t *testing.T) {
@@ -84,16 +82,15 @@ func TestEncodeWithRetry(t *testing.T) {
 		Retry: 11,
 		Data:  "junk\n\njk\nid:fake\n",
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(),
-		`retry:11
+	require.NoError(t, err)
+	assert.Equal(t, `retry:11
 data:junk
 data:
 data:jk
 data:id:fake
 data:
 
-`)
+`, w.String())
 }
 
 func TestEncodeWithEverything(t *testing.T) {
@@ -104,31 +101,31 @@ func TestEncodeWithEverything(t *testing.T) {
 		Retry: 10,
 		Data:  "some data",
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "id:12345\nevent:abc\nretry:10\ndata:some data\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "id:12345\nevent:abc\nretry:10\ndata:some data\n\n", w.String())
 }
 
 func TestEncodeMap(t *testing.T) {
 	w := new(bytes.Buffer)
 	err := Encode(w, Event{
 		Event: "a map",
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			testFooKey: "b\n\rar",
 			testBarKey: "id: 2",
 		},
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a map\ndata:{\"bar\":\"id: 2\",\"foo\":\"b\\n\\rar\"}\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "event:a map\ndata:{\"bar\":\"id: 2\",\"foo\":\"b\\n\\rar\"}\n\n", w.String())
 }
 
 func TestEncodeSlice(t *testing.T) {
 	w := new(bytes.Buffer)
 	err := Encode(w, Event{
 		Event: "a slice",
-		Data:  []interface{}{1, "text", map[string]interface{}{testFooKey: testBarKey}},
+		Data:  []any{1, "text", map[string]any{testFooKey: testBarKey}},
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a slice\ndata:[1,\"text\",{\"foo\":\"bar\"}]\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "event:a slice\ndata:[1,\"text\",{\"foo\":\"bar\"}]\n\n", w.String())
 }
 
 func TestEncodeStruct(t *testing.T) {
@@ -142,16 +139,16 @@ func TestEncodeStruct(t *testing.T) {
 		Event: "a struct",
 		Data:  myStruct,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a struct\ndata:{\"A\":1,\"value\":\"number\"}\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "event:a struct\ndata:{\"A\":1,\"value\":\"number\"}\n\n", w.String())
 
 	w.Reset()
 	err = Encode(w, Event{
 		Event: "a struct",
 		Data:  &myStruct,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:a struct\ndata:{\"A\":1,\"value\":\"number\"}\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "event:a struct\ndata:{\"A\":1,\"value\":\"number\"}\n\n", w.String())
 }
 
 func TestEncodeInteger(t *testing.T) {
@@ -160,8 +157,8 @@ func TestEncodeInteger(t *testing.T) {
 		Event: "an integer",
 		Data:  1,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:an integer\ndata:1\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "event:an integer\ndata:1\n\n", w.String())
 }
 
 func TestEncodeFloat(t *testing.T) {
@@ -170,8 +167,8 @@ func TestEncodeFloat(t *testing.T) {
 		Event: "Float",
 		Data:  1.5,
 	})
-	assert.NoError(t, err)
-	assert.Equal(t, w.String(), "event:Float\ndata:1.5\n\n")
+	require.NoError(t, err)
+	assert.Equal(t, "event:Float\ndata:1.5\n\n", w.String())
 }
 
 func TestEncodeStream(t *testing.T) {
@@ -184,7 +181,7 @@ func TestEncodeStream(t *testing.T) {
 
 	_ = Encode(w, Event{
 		Id:   "123",
-		Data: map[string]interface{}{testFooKey: testBarKey, testBarKey: testFooKey},
+		Data: map[string]any{testFooKey: testBarKey, testBarKey: testFooKey},
 	})
 
 	_ = Encode(w, Event{
@@ -192,10 +189,9 @@ func TestEncodeStream(t *testing.T) {
 		Event: "chat",
 		Data:  "hi! dude",
 	})
-	assert.Equal(t, w.String(),
-		"event:float\ndata:1.5\n\n"+
-			"id:123\ndata:{\"bar\":\"foo\",\"foo\":\"bar\"}\n\n"+
-			"id:124\nevent:chat\ndata:hi! dude\n\n")
+	assert.Equal(t, "event:float\ndata:1.5\n\n"+
+		"id:123\ndata:{\"bar\":\"foo\",\"foo\":\"bar\"}\n\n"+
+		"id:124\nevent:chat\ndata:hi! dude\n\n", w.String())
 }
 
 func TestRenderSSE(t *testing.T) {
@@ -206,10 +202,10 @@ func TestRenderSSE(t *testing.T) {
 		Data:  "hi! how are you?",
 	}).Render(w)
 
-	assert.NoError(t, err)
-	assert.Equal(t, w.Body.String(), "event:msg\ndata:hi! how are you?\n\n")
-	assert.Equal(t, w.Header().Get("Content-Type"), "text/event-stream;charset=utf-8")
-	assert.Equal(t, w.Header().Get("Cache-Control"), "no-cache")
+	require.NoError(t, err)
+	assert.Equal(t, "event:msg\ndata:hi! how are you?\n\n", w.Body.String())
+	assert.Equal(t, "text/event-stream;charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Equal(t, "no-cache", w.Header().Get("Cache-Control"))
 }
 
 func BenchmarkResponseWriter(b *testing.B) {
