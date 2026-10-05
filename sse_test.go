@@ -6,6 +6,9 @@ package sse
 
 import (
 	"bytes"
+	"errors"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -206,6 +209,181 @@ func TestRenderSSE(t *testing.T) {
 	assert.Equal(t, "event:msg\ndata:hi! how are you?\n\n", w.Body.String())
 	assert.Equal(t, "text/event-stream;charset=utf-8", w.Header().Get("Content-Type"))
 	assert.Equal(t, "no-cache", w.Header().Get("Cache-Control"))
+}
+
+type failingWriter struct {
+	output           []byte
+	remaining        int
+	err              error
+	failed           bool
+	writesAfterError int
+}
+
+func (w *failingWriter) Write(data []byte) (int, error) {
+	if w.failed {
+		w.writesAfterError++
+		return 0, w.err
+	}
+
+	n := min(len(data), w.remaining)
+	w.output = append(w.output, data[:n]...)
+	w.remaining -= n
+	if n < len(data) {
+		w.failed = true
+		return n, w.err
+	}
+	return n, nil
+}
+
+type failingStringWriter struct {
+	*failingWriter
+}
+
+func (w failingStringWriter) WriteString(data string) (int, error) {
+	return w.Write([]byte(data))
+}
+
+func newFailingWriter(allowed int, withWriteString bool) (io.Writer, *failingWriter) {
+	w := &failingWriter{remaining: allowed, err: errors.New("writer failed")}
+	if withWriteString {
+		return failingStringWriter{w}, w
+	}
+	return w, w
+}
+
+func TestEncodeWriteErrors(t *testing.T) {
+	tests := []struct {
+		name  string
+		event Event
+		want  string
+	}{
+		{
+			name: "fields",
+			event: Event{
+				Id:    "id\n\ré",
+				Event: "type\n\ré",
+				Retry: 1500,
+				Data:  "value",
+			},
+			want: "id:id\\n\\ré\nevent:type\\n\\ré\nretry:1500\ndata:value\n\n",
+		},
+		{
+			name:  "empty string",
+			event: Event{Data: ""},
+			want:  "data:\n\n",
+		},
+		{
+			name:  "string",
+			event: Event{Data: "café\nnext\rline"},
+			want:  "data:café\ndata:next\\rline\n\n",
+		},
+		{
+			name:  "bytes",
+			event: Event{Data: []byte("café\nnext\rline")},
+			want:  "data:café\ndata:next\\rline\n\n",
+		},
+		{
+			name:  "scalar",
+			event: Event{Data: 42},
+			want:  "data:42\n\n",
+		},
+		{
+			name:  "map",
+			event: Event{Data: map[string]any{"answer": 42, "text": "line\nnext"}},
+			want:  "data:{\"answer\":42,\"text\":\"line\\nnext\"}\n\n",
+		},
+		{
+			name:  "slice",
+			event: Event{Data: []any{42, "line\nnext"}},
+			want:  "data:[42,\"line\\nnext\"]\n\n",
+		},
+		{
+			name: "struct",
+			event: Event{Data: struct {
+				Value string `json:"value"`
+			}{Value: "line\nnext"}},
+			want: "data:{\"value\":\"line\\nnext\"}\n\n",
+		},
+	}
+
+	for writerType, name := range []string{"Writer", "StringWriter"} {
+		t.Run(name, func(t *testing.T) {
+			for _, test := range tests {
+				t.Run(test.name, func(t *testing.T) {
+					for allowed := range len(test.want) {
+						writer, state := newFailingWriter(allowed, writerType == 1)
+						err := Encode(writer, test.event)
+						require.ErrorIs(t, err, state.err, "after %d bytes", allowed)
+						require.Same(t, state.err, err, "after %d bytes", allowed)
+						require.Equal(
+							t,
+							test.want[:allowed],
+							string(state.output),
+							"after %d bytes",
+							allowed,
+						)
+						require.Zero(t, state.writesAfterError, "after %d bytes", allowed)
+					}
+
+					writer, state := newFailingWriter(len(test.want), writerType == 1)
+					require.NoError(t, Encode(writer, test.event))
+					require.Equal(t, test.want, string(state.output))
+					require.Zero(t, state.writesAfterError)
+				})
+			}
+		})
+	}
+}
+
+type failingResponseWriter struct {
+	io.Writer
+	header http.Header
+}
+
+func (w failingResponseWriter) Header() http.Header {
+	return w.header
+}
+
+func (failingResponseWriter) WriteHeader(int) {}
+
+func TestRenderWriteErrors(t *testing.T) {
+	event := Event{Id: "123", Event: "message", Retry: 1500, Data: "value"}
+	const want = "id:123\nevent:message\nretry:1500\ndata:value\n\n"
+
+	for allowed := range len(want) {
+		writer, state := newFailingWriter(allowed, false)
+		response := failingResponseWriter{Writer: writer, header: make(http.Header)}
+		err := event.Render(response)
+		require.ErrorIs(t, err, state.err, "after %d bytes", allowed)
+		require.Same(t, state.err, err, "after %d bytes", allowed)
+		require.Equal(t, want[:allowed], string(state.output), "after %d bytes", allowed)
+		require.Zero(t, state.writesAfterError, "after %d bytes", allowed)
+		require.Equal(t, ContentType, response.Header().Get("Content-Type"))
+	}
+}
+
+type countingJSONData struct {
+	calls int
+}
+
+func (data *countingJSONData) MarshalJSON() ([]byte, error) {
+	data.calls++
+	return []byte(`{"ok":true}`), nil
+}
+
+func TestEncodeWriteErrorBeforeJSON(t *testing.T) {
+	for writerType, name := range []string{"Writer", "StringWriter"} {
+		t.Run(name, func(t *testing.T) {
+			writer, state := newFailingWriter(0, writerType == 1)
+			data := new(countingJSONData)
+			err := Encode(writer, Event{Data: data})
+			require.ErrorIs(t, err, state.err)
+			require.Same(t, state.err, err)
+			require.Zero(t, data.calls)
+			require.Empty(t, state.output)
+			require.Zero(t, state.writesAfterError)
+		})
+	}
 }
 
 func BenchmarkResponseWriter(b *testing.B) {

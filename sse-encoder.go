@@ -44,44 +44,72 @@ type Event struct {
 
 func Encode(writer io.Writer, event Event) error {
 	w := checkWriter(writer)
-	writeID(w, event.Id)
-	writeEvent(w, event.Event)
-	writeRetry(w, event.Retry)
+	if err := writeID(w, event.Id); err != nil {
+		return err
+	}
+	if err := writeEvent(w, event.Event); err != nil {
+		return err
+	}
+	if err := writeRetry(w, event.Retry); err != nil {
+		return err
+	}
 	return writeData(w, event.Data)
 }
 
-func writeID(w stringWriter, id string) {
+func writeID(w stringWriter, id string) error {
 	if len(id) > 0 {
-		_, _ = w.WriteString("id:")
-		_, _ = fieldReplacer.WriteString(w, id)
-		_, _ = w.WriteString("\n")
+		if _, err := w.WriteString("id:"); err != nil {
+			return err
+		}
+		if _, err := fieldReplacer.WriteString(w, id); err != nil {
+			return err
+		}
+		_, err := w.WriteString("\n")
+		return err
 	}
+	return nil
 }
 
-func writeEvent(w stringWriter, event string) {
+func writeEvent(w stringWriter, event string) error {
 	if len(event) > 0 {
-		_, _ = w.WriteString("event:")
-		_, _ = fieldReplacer.WriteString(w, event)
-		_, _ = w.WriteString("\n")
+		if _, err := w.WriteString("event:"); err != nil {
+			return err
+		}
+		if _, err := fieldReplacer.WriteString(w, event); err != nil {
+			return err
+		}
+		_, err := w.WriteString("\n")
+		return err
 	}
+	return nil
 }
 
-func writeRetry(w stringWriter, retry uint) {
+func writeRetry(w stringWriter, retry uint) error {
 	if retry > 0 {
-		_, _ = w.WriteString("retry:")
-		_, _ = w.WriteString(strconv.FormatUint(uint64(retry), 10))
-		_, _ = w.WriteString("\n")
+		if _, err := w.WriteString("retry:"); err != nil {
+			return err
+		}
+		if _, err := w.WriteString(strconv.FormatUint(uint64(retry), 10)); err != nil {
+			return err
+		}
+		_, err := w.WriteString("\n")
+		return err
 	}
+	return nil
 }
 
 func writeData(w stringWriter, data any) error {
-	_, _ = w.WriteString("data:")
+	if _, err := w.WriteString("data:"); err != nil {
+		return err
+	}
 
 	bData, ok := data.([]byte)
 	if ok {
-		_, _ = dataReplacer.WriteString(w, string(bData))
-		_, _ = w.WriteString("\n\n")
-		return nil
+		if _, err := dataReplacer.WriteString(w, string(bData)); err != nil {
+			return err
+		}
+		_, err := w.WriteString("\n\n")
+		return err
 	}
 
 	switch kindOfData(data) { //nolint:exhaustive // remaining kinds need no special encoding
@@ -90,12 +118,15 @@ func writeData(w stringWriter, data any) error {
 		if err != nil {
 			return err
 		}
-		_, _ = w.WriteString("\n")
+		_, err = w.WriteString("\n")
+		return err
 	default:
-		_, _ = dataReplacer.WriteString(w, fmt.Sprint(data))
-		_, _ = w.WriteString("\n\n")
+		if _, err := dataReplacer.WriteString(w, fmt.Sprint(data)); err != nil {
+			return err
+		}
+		_, err := w.WriteString("\n\n")
+		return err
 	}
-	return nil
 }
 
 func (r Event) Render(w http.ResponseWriter) error {
