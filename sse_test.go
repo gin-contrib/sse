@@ -20,6 +20,19 @@ const (
 	testBenchmarkData = "hi! how are you? I am fine. this is a long stupid message!!!"
 )
 
+func TestEncodeNilData(t *testing.T) {
+	w := new(bytes.Buffer)
+	err := Encode(w, Event{Event: "ping"})
+	require.NoError(t, err)
+	assert.Equal(t, "event:ping\ndata:\n\n", w.String())
+
+	type payload struct{ Name string }
+	w.Reset()
+	err = Encode(w, Event{Data: (*payload)(nil)})
+	require.NoError(t, err)
+	assert.Equal(t, "data:\n\n", w.String())
+}
+
 func TestEncodeOnlyData(t *testing.T) {
 	w := new(bytes.Buffer)
 	event := Event{
