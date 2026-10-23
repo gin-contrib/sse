@@ -48,8 +48,7 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 	// Lines must be separated by either a U+000D CARRIAGE RETURN U+000A LINE FEED (CRLF) character pair,
 	// a single U+000A LINE FEED (LF) character,
 	// or a single U+000D CARRIAGE RETURN (CR) character.
-	lines := bytes.Split(buf, []byte{'\n'})
-	for _, line := range lines {
+	for line := range bytes.SplitSeq(buf, []byte{'\n'}) {
 		if len(line) == 0 {
 			// If the line is empty (a blank line). Dispatch the event.
 			d.dispatchEvent(currentEvent, dataBuffer.String())
