@@ -1,7 +1,7 @@
 # Server-Sent Events
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/gin-contrib/sse.svg)](https://pkg.go.dev/github.com/gin-contrib/sse)
-[![Run Tests](https://github.com/gin-contrib/sse/actions/workflows/go.yml/badge.svg)](https://github.com/gin-contrib/sse/actions/workflows/go.yml)
+[![Lint and Testing](https://github.com/gin-contrib/sse/actions/workflows/testing.yml/badge.svg)](https://github.com/gin-contrib/sse/actions/workflows/testing.yml)
 [![Trivy Security Scan](https://github.com/gin-contrib/sse/actions/workflows/trivy-scan.yml/badge.svg)](https://github.com/gin-contrib/sse/actions/workflows/trivy-scan.yml)
 [![codecov](https://codecov.io/gh/gin-contrib/sse/branch/master/graph/badge.svg)](https://codecov.io/gh/gin-contrib/sse)
 
