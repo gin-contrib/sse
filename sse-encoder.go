@@ -77,6 +77,12 @@ func writeRetry(w stringWriter, retry uint) {
 func writeData(w stringWriter, data any) error {
 	_, _ = w.WriteString("data:")
 
+	// A heartbeat often sets only Event. nil must not reach reflect.Value.Kind.
+	if data == nil {
+		_, _ = w.WriteString("\n\n")
+		return nil
+	}
+
 	bData, ok := data.([]byte)
 	if ok {
 		_, _ = dataReplacer.WriteString(w, string(bData))
@@ -85,6 +91,8 @@ func writeData(w stringWriter, data any) error {
 	}
 
 	switch kindOfData(data) { //nolint:exhaustive // remaining kinds need no special encoding
+	case reflect.Invalid:
+		_, _ = w.WriteString("\n\n")
 	case reflect.Struct, reflect.Slice, reflect.Map:
 		err := json.NewEncoder(w).Encode(data)
 		if err != nil {
@@ -114,8 +122,14 @@ func (r Event) WriteContentType(w http.ResponseWriter) {
 
 func kindOfData(data any) reflect.Kind {
 	value := reflect.ValueOf(data)
+	if !value.IsValid() {
+		return reflect.Invalid
+	}
 	valueType := value.Kind()
 	if valueType == reflect.Pointer {
+		if value.IsNil() {
+			return reflect.Invalid
+		}
 		valueType = value.Elem().Kind()
 	}
 	return valueType
