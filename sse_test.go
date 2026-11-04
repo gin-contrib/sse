@@ -210,9 +210,9 @@ func TestRenderSSE(t *testing.T) {
 
 func BenchmarkResponseWriter(b *testing.B) {
 	w := httptest.NewRecorder()
-	b.ResetTimer()
+
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = (Event{
 			Event: testNewMessage,
 			Data:  testBenchmarkData,
@@ -222,9 +222,9 @@ func BenchmarkResponseWriter(b *testing.B) {
 
 func BenchmarkFullSSE(b *testing.B) {
 	buf := new(bytes.Buffer)
-	b.ResetTimer()
+
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Encode(buf, Event{
 			Event: testNewMessage,
 			Id:    "13435",
@@ -237,9 +237,9 @@ func BenchmarkFullSSE(b *testing.B) {
 
 func BenchmarkNoRetrySSE(b *testing.B) {
 	buf := new(bytes.Buffer)
-	b.ResetTimer()
+
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Encode(buf, Event{
 			Event: testNewMessage,
 			Id:    "13435",
@@ -251,9 +251,9 @@ func BenchmarkNoRetrySSE(b *testing.B) {
 
 func BenchmarkSimpleSSE(b *testing.B) {
 	buf := new(bytes.Buffer)
-	b.ResetTimer()
+
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		_ = Encode(buf, Event{
 			Event: testNewMessage,
 			Data:  testBenchmarkData,
