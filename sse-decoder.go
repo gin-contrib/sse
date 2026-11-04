@@ -63,16 +63,13 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 			continue
 		}
 
-		var field, value []byte
-		colonIndex := bytes.IndexRune(line, ':')
-		if colonIndex != -1 {
+		field, value, found := bytes.Cut(line, []byte{':'})
+		if found {
 			// If the line contains a U+003A COLON character character (:)
 			// Collect the characters on the line before the first U+003A COLON character (:),
 			// and let field be that string.
-			field = line[:colonIndex]
 			// Collect the characters on the line after the first U+003A COLON character (:),
 			// and let value be that string.
-			value = line[colonIndex+1:]
 			// If value starts with a single U+0020 SPACE character, remove it from value.
 			if len(value) > 0 && value[0] == ' ' {
 				value = value[1:]
@@ -80,7 +77,6 @@ func (d *decoder) decode(r io.Reader) ([]Event, error) {
 		} else {
 			// Otherwise, the string is not empty but does not contain a U+003A COLON character character (:)
 			// Use the whole line as the field name, and the empty string as the field value.
-			field = line
 			value = []byte{}
 		}
 		// The steps to process the field given a field name and a field value depend on the field name,
